@@ -40,17 +40,31 @@ namespace Student2020ClientNoSSL_Kit.Controllers
 
         public Direction GetNextDirection(Playfield pf)
         {
-            // Sometimes the head can't choose between 2 equally distant cargos -> need state
+            
             Cell head = pf.mytrain[0];
+            List<Direction> dir;
+            List<Direction> dirTemp;
+
+            if (pf.energyLevel < 65 && pf.energyLevel > 20)
+            {
+                pf.energyStations.RemoveAll(es => !es.IsActive); // Remove all the stations that needs more than 5 cycles to fullfill
+                pf.energyStations.RemoveAll(es => pf.mytrain.Contains(es.point)); // Remove all the stations that are under the cargos snake
+                pf.energyStations.Sort((c1, c2) => computeDistance(c1.point, head).CompareTo(computeDistance(c2.point, head))); // Sort by distance
+
+                if (computeDistance(pf.energyStations[0].point, head) <= 2) // If there's a station within 2 cells
+                {
+                    dir = Dijkstra(head, pf.energyStations[0].point, pf);
+                    return dir[0]; // direct return
+                }
+            }
 
             // Sort the cargos from the closest to the farthest
             //pf.cargoList.RemoveAll(c => pf.mytrain.Contains(c));
             pf.cargoList.Sort((c1,c2)=>computeDistance(c1,head).CompareTo(computeDistance(c2,head)));
 
             // Dijkstra pathfinder
-            List<Direction> dir = Dijkstra(head, pf.cargoList[0], pf);
-            List<Direction> dirTemp;
-
+            dir = Dijkstra(head, pf.cargoList[0], pf);
+            
             int bestRouteLen = dir.Count;
 
             // Increase to test more cargos
